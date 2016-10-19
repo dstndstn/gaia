@@ -1,3 +1,4 @@
+import numpy as np
 import astropy.io.votable
 from astrometry.util.fits import fits_table
 
@@ -11,6 +12,7 @@ r = T.resources[0]
 t = r.tables[0]
 # This is a numpy MaskedArray object.
 arr = t.array
+dt = arr.dtype
 # Copy fields into a fits_table object
 T = fits_table()
 for k,v in dt.fields.items():
