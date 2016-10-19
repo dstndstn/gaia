@@ -3,9 +3,9 @@ from astrometry.util.fits import fits_table
 
 # Nasty.  From Gaia archive, go to ADQL interface, execute:
 #   select * from gaiadr1.cepheid
-# and download as VOTable. -> result.vot
+# and download as VOTable. -> cepheids.vot
 
-T = astropy.io.votable.parse('result.vot')
+T = astropy.io.votable.parse('cepheids.vot')
 # Grab the table
 r = T.resources[0]
 t = r.tables[0]
