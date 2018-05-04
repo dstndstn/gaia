@@ -43,8 +43,8 @@ F = fits_table('/global/cscratch1/sd/dstn/gaia-all-filenames.fits')
 filenames = ['/global/project/projectdirs/cosmo/staging/gaia/dr2/fits-flat/' + fn.strip() for fn in F.gaia_filenames]
 
 print('Finding healpixes in range..')
-#hps = healpix_rangesearch_radec(290.5, 44., 11.5, 1024)
-hps = healpix_rangesearch_radec_approx(ra, dec, radius, 1024)
+hps = healpix_rangesearch_radec(ra, dec, radius, 1024)
+#hps = healpix_rangesearch_radec_approx(ra, dec, radius, 1024)
 print('Found', len(hps), 'in range')
 # Convert to nested healpix index
 hpnest = [healpix_xy_to_nested(hp, 1024) for hp in hps]

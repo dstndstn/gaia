@@ -54,29 +54,61 @@ fbp = CubicSpline(curves.wavelength, curves.bp)
 frp = CubicSpline(curves.wavelength, curves.rp)
 fg  = CubicSpline(curves.wavelength, curves.g)
 
-Q = S[S.matched_gaia * S.qso * (S.zwarning==0)]
-print(len(Q), 'quasars')
-
-Q.cut(np.argsort(Q.phot_g_mean_mag))
-Q.synflux_bp = np.zeros(len(Q))
-Q.synflux_rp = np.zeros(len(Q))
-Q.synflux_g = np.zeros(len(Q))
-for iq in range(len(Q)):
-    q = Q[iq]
-    fn = '/global/project/projectdirs/cosmo/data/sdss/dr14/sdss/spectro/redux/%s/spectra/lite/%04i/spec-%04i-%i-%04i.fits' % (q.run2d.strip(), q.plate, q.plate, q.mjd, q.fiberid)
-    #print(fn)
-    print('.', sep='', end='', flush=True)
-    spec = fits_table(fn)
-    spec.nm = 0.1 * 10.**spec.loglam
-    Q.synflux_bp[iq] = np.sum(spec.flux * fbp(spec.nm))
-    Q.synflux_rp[iq] = np.sum(spec.flux * frp(spec.nm))
-    Q.synflux_g [iq] = np.sum(spec.flux * fg (spec.nm))
+if False:
+    Q = S[S.matched_gaia * S.qso * (S.zwarning==0)]
+    print(len(Q), 'quasars')
     
-    if iq and (iq % 1000 == 0):
-        fn = '/global/cscratch1/sd/dstn/sdss-qso-synflux-interim.fits'
-        Q.writeto(fn)
-        print()
-        print('Wrote', fn)
+    Q.cut(np.argsort(Q.phot_g_mean_mag))
+    Q.synflux_bp = np.zeros(len(Q))
+    Q.synflux_rp = np.zeros(len(Q))
+    Q.synflux_g = np.zeros(len(Q))
+    for iq in range(len(Q)):
+        q = Q[iq]
+        fn = '/global/project/projectdirs/cosmo/data/sdss/dr14/sdss/spectro/redux/%s/spectra/lite/%04i/spec-%04i-%i-%04i.fits' % (q.run2d.strip(), q.plate, q.plate, q.mjd, q.fiberid)
+        #print(fn)
+        print('.', sep='', end='', flush=True)
+        spec = fits_table(fn)
+        spec.nm = 0.1 * 10.**spec.loglam
+        Q.synflux_bp[iq] = np.sum(spec.flux * fbp(spec.nm))
+        Q.synflux_rp[iq] = np.sum(spec.flux * frp(spec.nm))
+        Q.synflux_g [iq] = np.sum(spec.flux * fg (spec.nm))
+        
+        if iq and (iq % 1000 == 0):
+            fn = '/global/cscratch1/sd/dstn/sdss-qso-synflux-interim.fits'
+            Q[:iq].writeto(fn)
+            print()
+            print('Wrote', fn)
+    
+    fn = '/global/cscratch1/sd/dstn/sdss-qso-synflux.fits'
+    Q.writeto(fn)
 
-fn = '/global/cscratch1/sd/dstn/sdss-qso-synflux.fits'
-Q.writeto(fn)
+
+if True:
+    G = S[S.matched_gaia * S.gal * (S.zwarning==0)]
+    print(len(G), 'galaxies')
+    
+    G.cut(np.argsort(G.phot_g_mean_mag))
+    G.synflux_bp = np.zeros(len(G))
+    G.synflux_rp = np.zeros(len(G))
+    G.synflux_g = np.zeros(len(G))
+    for ig in range(len(G)):
+        g = G[ig]
+        fn = '/global/project/projectdirs/cosmo/data/sdss/dr14/sdss/spectro/redux/%s/spectra/lite/%04i/spec-%04i-%i-%04i.fits' % (g.run2d.strip(), g.plate, g.plate, g.mjd, g.fiberid)
+        #print(fn)
+        #print('.', sep='', end='', flush=True)
+        spec = fits_table(fn)
+        spec.nm = 0.1 * 10.**spec.loglam
+        G.synflux_bp[ig] = np.sum(spec.flux * fbp(spec.nm))
+        G.synflux_rp[ig] = np.sum(spec.flux * frp(spec.nm))
+        G.synflux_g [ig] = np.sum(spec.flux * fg (spec.nm))
+        
+        if ig and (ig % 1000 == 0):
+            fn = '/global/cscratch1/sd/dstn/sdss-gal-synflux-interim.fits'
+            G[:ig].writeto(fn)
+            print()
+            print('Wrote', fn, 'after', ig, 'of', len(G))
+    
+    fn = '/global/cscratch1/sd/dstn/sdss-gal-synflux.fits'
+    G.writeto(fn)
+
+

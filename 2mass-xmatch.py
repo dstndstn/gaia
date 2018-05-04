@@ -12,14 +12,27 @@ import os
 
 def main():
 
+    Tgas = fits_table('/project/projectdirs/cosmo/staging/gaia/tgas-source/tgas-source.fits')
+
+
+    # T = Tgas.copy()
+    # # Run the proper motions back to the approximate epoch of 2MASS
+    # # (1991) from approx epoch of Gaia DR1 (2015).
+    # dyr = 2015. - 1991.
+    # 
+    # T.ra  -= dyr * Tgas.pmra  / 3600. / np.cos(np.deg2rad(Tgas.dec))
+    # T.dec -= dyr * Tgas.pmdec / 3600.
+
     tmsubfn = '2mass-subs/2mass-sub.fits'
     if not os.path.exists(tmsubfn):
-        Tmsub = twomass_sub()
+        Tmsub = twomass_sub(T)
         Tmsub.writeto(tmsubfn)
     else:
         Tmsub = fits_table(tmsubfn)
 
-    Tgas = fits_table('/project/projectdirs/cosmo/staging/gaia/tgas-source/tgas-source.fits')
+
+    # Proper motions...
+
     I,J,d = match_radec(Tgas.ra, Tgas.dec, Tmsub.ra, Tmsub.dec, 4./3600., nearest=True)
     print(len(I), 'matches')
     print(len(np.unique(I)), 'unique TGAS stars matched')
@@ -30,6 +43,37 @@ def main():
     G    = Tgas.phot_g_mean_mag[I]
 
     Jmag = Tmsub.j_mag[J]
+
+    plt.clf()
+    plt.plot((Tgas.ra[I] - Tmsub.ra[J]) * np.cos(np.deg2rad(Tgas.dec[I])),
+             Tgas.dec[I] - Tmsub.dec[J], 'k.')
+    plt.xlabel('dRA (deg)')
+    plt.ylabel('dDec (deg)')
+    plt.savefig('dradec1.png')
+
+    plt.clf()
+    plt.plot(Tgas.pmra[I], Tgas.pmdec[I], 'k.')
+    plt.xlabel('pmra (mas/yr)')
+    plt.ylabel('pmdec (mas/yr)')
+    plt.savefig('dradec2.png')
+
+    dyrs = (Tgas.ref_epoch[I] - 2000.) - (Tmsub.jdate[J] - 2451545.0) / 365.25
+    print('dyrs: median', np.median(dyrs))
+
+    mra  = dyrs * Tgas.pmra[I] / 1000. / 3600. / np.cos(np.deg2rad(Tgas.dec[I]))
+    dra  = Tgas.ra[I] - (Tmsub.ra[J] + mra)
+    mdec = dyrs * Tgas.pmdec[I] / 1000. / 3600.
+    ddec = Tgas.dec[I] - (Tmsub.dec[J] + mdec)
+
+    plt.clf()
+    plt.plot(dra, ddec, 'k.')
+    plt.xlabel('dRA (deg)')
+    plt.ylabel('dDec (deg)')
+    plt.savefig('dradec3.png')
+
+
+    sys.exit(0)
+
 
     K = np.flatnonzero((P > 0) * (P > Perr*10.))
     print(len(K), 'stars with parallax > 0')
@@ -91,12 +135,11 @@ def main():
 
 
 
-def twomass_sub():
+def twomass_sub(T):
     subs = []
-    T = fits_table('~/legacypipe-dir/tycho2.fits.gz')
 
     for icat in range(972):
-        tmfn = '2mass-subs/2mass-%03i.fits' % icat
+        tmfn = '2mass-subs/2mass-%03i-sub2.fits' % icat
         if os.path.exists(tmfn):
             print('Reading', tmfn)
             W = fits_table(tmfn)
@@ -104,14 +147,14 @@ def twomass_sub():
             continue
 
         print('Reading 2MASS healpix', icat)
-        TM = fits_table('/project/projectdirs/cosmo/staging/2mass/2mass_hp%03i.fits' % icat)
+        TM = fits_table('/project/projectdirs/cosmo/data/2mass/healpix/2mass_hp%03i.fits' % icat)
         print('Dec range', TM.dec.min(), TM.dec.max())
 
         dlo = TM.dec.min()
         dhi = TM.dec.max()
         margin = 0.002
         TI = np.flatnonzero((T.dec > (dlo - margin)) * (T.dec < (dhi + margin)))
-        print(len(TI), 'Tycho-2 stars in Dec range', dlo,dhi)
+        print(len(TI), 'stars in Dec range', dlo,dhi)
 
         print('Matching...')
         I,J,d = match_radec(T.ra[TI], T.dec[TI], TM.ra, TM.dec, 4./3600.)
