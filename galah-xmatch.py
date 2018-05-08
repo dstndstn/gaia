@@ -20,6 +20,9 @@ print('Read Gaia KD')
 print('Matching...')
 rad = 2./3600.
 #I,J,d = trees_match(galah_kd, gaia_kd, deg2dist(rad), nearest=True)
+
+### NOTE, this does not seem to be working correctly!!
+
 I,J,D = trees_match(galah_kd, gaia_kd, deg2dist(rad))
 print(len(I), 'matches')
 
