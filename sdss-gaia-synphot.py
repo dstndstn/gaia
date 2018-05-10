@@ -11,13 +11,24 @@ from glob import glob
 from collections import Counter
 from scipy.interpolate import CubicSpline
 
-print('Reading spec table...')
-S = fits_table('/global/cscratch1/sd/dstn/sdss-specObj-dr14-gaia-match.fits')
-S.r_mag = -2.5 * (np.log10(S.calibflux[:,2]) - 9.)
-S.star = (S.get('class') == 'STAR  ')
-S.qso  = (S.get('class') == 'QSO   ')
-S.gal  = (S.get('class') == 'GALAXY')
-S.dm = 5.*np.log10(1./(S.parallax/1000.))-5.
+if False:
+    print('Reading spec table...')
+    S = fits_table('/global/cscratch1/sd/dstn/sdss-specObj-dr14-gaia-match.fits')
+    S.r_mag = -2.5 * (np.log10(S.calibflux[:,2]) - 9.)
+    S.star = (S.get('class') == 'STAR  ')
+    S.qso  = (S.get('class') == 'QSO   ')
+    S.gal  = (S.get('class') == 'GALAXY')
+    S.dm = 5.*np.log10(1./(S.parallax/1000.))-5.
+
+    S.synflux_bp     = np.zeros(len(S), np.float32)
+    S.synflux_bp_err = np.zeros(len(S), np.float32)
+    S.synflux_rp     = np.zeros(len(S), np.float32)
+    S.synflux_rp_err = np.zeros(len(S), np.float32)
+    S.synflux_g      = np.zeros(len(S), np.float32)
+    S.synflux_g_err  = np.zeros(len(S), np.float32)
+else:
+    S = fits_table('/global/cscratch1/sd/dstn/sdss-gaia-synflux-interim2.fits')
+
 
 if not os.path.exists('GaiaDR2_Passbands.fits'):
     # https://www.cosmos.esa.int/documents/29201/1645651/GaiaDR2_Passbands_ZeroPoints.zip/49cdce41-8eee-655d-7ed2-4e7a83598c1d
@@ -55,14 +66,8 @@ fbp = CubicSpline(curves.wavelength, curves.bp)
 frp = CubicSpline(curves.wavelength, curves.rp)
 fg  = CubicSpline(curves.wavelength, curves.g)
 
-S.synflux_bp     = np.zeros(len(S), np.float32)
-S.synflux_bp_err = np.zeros(len(S), np.float32)
-S.synflux_rp     = np.zeros(len(S), np.float32)
-S.synflux_rp_err = np.zeros(len(S), np.float32)
-S.synflux_g      = np.zeros(len(S), np.float32)
-S.synflux_g_err  = np.zeros(len(S), np.float32)
-
-I = np.flatnonzero((S.zwarning == 0) * (S.matched_gaia))
+I = np.flatnonzero((S.zwarning == 0) * (S.matched_gaia) *
+                   (S.synflux_g == 0))
 print('Synphot for', len(I), 'spectra...')
 for nn,ii in enumerate(I):
     q = S[ii]
@@ -104,7 +109,7 @@ for nn,ii in enumerate(I):
            S.synflux_g [ii] /S.phot_g_mean_flux [ii]))
 
     if nn and (nn % 100000 == 0):
-        fn = '/global/cscratch1/sd/dstn/sdss-gaia-synflux-interim2.fits'
+        fn = '/global/cscratch1/sd/dstn/sdss-gaia-synflux-interim.fits'
         S[:ii].writeto(fn)
         print()
         print('Wrote', fn)
